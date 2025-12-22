@@ -13,6 +13,8 @@ import {
 import { COLORS } from '../../utils/constants';
 import { Elder, Medication, MedicationSchedule, MedicationLog } from '../../types';
 import { wsService } from '../../services/websocket';
+import AddMedicationModal from '../../components/AddMedicationModal';
+import SendMessageModal from '../../components/SendMessageModal';
 
 interface MedicationsScreenProps {
   elder: Elder;
@@ -30,6 +32,8 @@ export default function MedicationsScreen({ elder, onBack }: MedicationsScreenPr
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<MedicationsData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
 
   useEffect(() => {
     fetchMedications();
@@ -72,8 +76,96 @@ export default function MedicationsScreen({ elder, onBack }: MedicationsScreenPr
     return `${time} • ${selectedDays}`;
   };
 
-  const handleAddMedication = () => {
-    Alert.alert('Coming Soon', 'Add medication feature will be available in the next update!');
+  const handleAddMedication = async (medicationData: {
+    name: string;
+    dosage: string;
+    instructions: string;
+    schedules: any[];
+  }) => {
+    try {
+      console.log('📤 Adding medication:', medicationData);
+
+      const response = await wsService.addMedication(elder.id, medicationData);
+
+      console.log('✅ Medication added successfully:', response);
+      Alert.alert('Success', response.message || 'Medication added successfully');
+
+      // Refresh medications list
+      fetchMedications();
+    } catch (error) {
+      console.error('❌ Failed to add medication:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteMedication = async (medicationId: string, medicationName: string) => {
+    Alert.alert(
+      'Delete Medication',
+      `Are you sure you want to delete "${medicationName}"? This will remove it from the elder's device.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('📤 Deleting medication:', medicationId);
+
+              const response = await wsService.deleteMedication(elder.id, medicationId);
+
+              console.log('✅ Medication deleted successfully:', response);
+              Alert.alert('Success', response.message || 'Medication deleted successfully');
+
+              // Refresh medications list
+              fetchMedications();
+            } catch (error) {
+              console.error('❌ Failed to delete medication:', error);
+              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete medication');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSendMessage = async (message: string) => {
+    try {
+      console.log('📤 Sending message to elder');
+
+      const response = await wsService.sendMessageToElder(elder.id, {
+        guardianName: elder.name || 'Guardian',
+        message,
+        requiresAcknowledgment: false,
+      });
+
+      console.log('✅ Message sent successfully:', response);
+      Alert.alert('Success', response.message || 'Message sent successfully');
+    } catch (error) {
+      console.error('❌ Failed to send message:', error);
+      throw error;
+    }
+  };
+
+  const handleSendReminder = async (
+    title: string,
+    message: string,
+    priority: 'low' | 'normal' | 'high' | 'urgent'
+  ) => {
+    try {
+      console.log('📤 Sending reminder to elder');
+
+      const response = await wsService.sendReminder(elder.id, {
+        title,
+        message,
+        priority,
+      });
+
+      console.log('✅ Reminder sent successfully:', response);
+      Alert.alert('Success', response.message || 'Reminder sent successfully');
+    } catch (error) {
+      console.error('❌ Failed to send reminder:', error);
+      throw error;
+    }
   };
 
   if (isLoading) {
@@ -122,7 +214,16 @@ export default function MedicationsScreen({ elder, onBack }: MedicationsScreenPr
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medications</Text>
-        <TouchableOpacity style={styles.addButton} onPress={handleAddMedication}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => setShowMessageModal(true)}
+        >
+          <Text style={styles.iconButtonText}>💬</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setShowAddModal(true)}
+        >
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
       </View>
@@ -144,8 +245,16 @@ export default function MedicationsScreen({ elder, onBack }: MedicationsScreenPr
             return (
               <View key={med.id} style={styles.medicationCard}>
                 <View style={styles.medicationHeader}>
-                  <Text style={styles.medicationName}>{med.name}</Text>
-                  <Text style={styles.medicationDosage}>{med.dosage}</Text>
+                  <View style={styles.medicationInfo}>
+                    <Text style={styles.medicationName}>{med.name}</Text>
+                    <Text style={styles.medicationDosage}>{med.dosage}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteMedication(med.id, med.name)}
+                  >
+                    <Text style={styles.deleteButtonText}>🗑️</Text>
+                  </TouchableOpacity>
                 </View>
 
                 {med.instructions && (
@@ -183,12 +292,30 @@ export default function MedicationsScreen({ elder, onBack }: MedicationsScreenPr
             <Text style={styles.emptyText}>
               No medications have been added yet.
             </Text>
-            <TouchableOpacity style={styles.emptyButton} onPress={handleAddMedication}>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => setShowAddModal(true)}
+            >
               <Text style={styles.emptyButtonText}>Add First Medication</Text>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      {/* Modals */}
+      <AddMedicationModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddMedication}
+      />
+
+      <SendMessageModal
+        visible={showMessageModal}
+        onClose={() => setShowMessageModal(false)}
+        onSendMessage={handleSendMessage}
+        onSendReminder={handleSendReminder}
+        guardianName={elder.name || 'Guardian'}
+      />
     </View>
   );
 }
@@ -221,6 +348,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
     flex: 1,
+  },
+  iconButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  iconButtonText: {
+    fontSize: 24,
   },
   addButton: {
     backgroundColor: COLORS.primary,
@@ -292,6 +426,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  medicationInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   medicationName: {
     fontSize: 18,
     fontWeight: '600',
@@ -302,6 +443,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.primary,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  deleteButtonText: {
+    fontSize: 20,
   },
   medicationInstructions: {
     fontSize: 14,

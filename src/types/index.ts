@@ -82,6 +82,7 @@ export interface HealthCheckIn {
 
 // WebSocket Message Types
 export type MessageType =
+  // Query messages
   | 'GET_STATE'
   | 'STATE_RESPONSE'
   | 'GET_MEDICATIONS'
@@ -92,7 +93,18 @@ export type MessageType =
   | 'ALERT_HISTORY_RESPONSE'
   | 'GET_HEALTH_HISTORY'
   | 'HEALTH_HISTORY_RESPONSE'
-  | 'ALERT_EVENT';
+  | 'ALERT_EVENT'
+  // Command messages (Guardian -> Elder)
+  | 'ADD_MEDICATION'
+  | 'UPDATE_MEDICATION'
+  | 'DELETE_MEDICATION'
+  | 'SEND_REMINDER'
+  | 'SEND_MESSAGE'
+  | 'UPDATE_EMERGENCY_CONTACT'
+  | 'DELETE_EMERGENCY_CONTACT'
+  // Command responses
+  | 'COMMAND_SUCCESS'
+  | 'COMMAND_ERROR';
 
 export interface WebSocketMessage {
   type: MessageType;
@@ -125,4 +137,64 @@ export interface StatePayload {
     takenToday: number;
     missedToday: number;
   };
+}
+
+// Command Payloads (Guardian -> Elder)
+export interface AddMedicationPayload {
+  name: string;
+  dosage: string;
+  instructions: string;
+  schedules: MedicationScheduleInput[];
+}
+
+export interface MedicationScheduleInput {
+  time: string; // "HH:mm" format
+  daysOfWeek: number[]; // 0-6 (Sunday=0)
+  enabled: boolean;
+}
+
+export interface UpdateMedicationPayload {
+  medicationId: string;
+  name?: string;
+  dosage?: string;
+  instructions?: string;
+  schedules?: MedicationScheduleInput[];
+}
+
+export interface DeleteMedicationPayload {
+  medicationId: string;
+}
+
+export interface SendReminderPayload {
+  title: string;
+  message: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+}
+
+export interface SendMessagePayload {
+  guardianName: string;
+  message: string;
+  requiresAcknowledgment?: boolean;
+}
+
+export interface UpdateEmergencyContactPayload {
+  contactId?: string; // null for new contact
+  name: string;
+  phoneNumber: string;
+  relationship: string;
+}
+
+export interface DeleteEmergencyContactPayload {
+  contactId: string;
+}
+
+// Command Response Payloads
+export interface CommandSuccessPayload {
+  message: string;
+  data?: { [key: string]: string };
+}
+
+export interface CommandErrorPayload {
+  error: string;
+  details?: string;
 }

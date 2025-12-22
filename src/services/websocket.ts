@@ -328,6 +328,78 @@ class WebSocketService {
   getReconnectAttempts(): number {
     return this.reconnectAttempts;
   }
+
+  // ============== Command Methods (Guardian -> Elder) ==============
+
+  /**
+   * Add medication to elder's device
+   */
+  async addMedication(
+    elderId: string,
+    payload: import('../types').AddMedicationPayload
+  ): Promise<import('../types').CommandSuccessPayload> {
+    return this.sendRequest('ADD_MEDICATION', elderId, payload);
+  }
+
+  /**
+   * Update medication on elder's device
+   */
+  async updateMedication(
+    elderId: string,
+    payload: import('../types').UpdateMedicationPayload
+  ): Promise<import('../types').CommandSuccessPayload> {
+    return this.sendRequest('UPDATE_MEDICATION', elderId, payload);
+  }
+
+  /**
+   * Delete medication from elder's device
+   */
+  async deleteMedication(
+    elderId: string,
+    medicationId: string
+  ): Promise<import('../types').CommandSuccessPayload> {
+    return this.sendRequest('DELETE_MEDICATION', elderId, { medicationId });
+  }
+
+  /**
+   * Send reminder to elder
+   */
+  async sendReminder(
+    elderId: string,
+    payload: import('../types').SendReminderPayload
+  ): Promise<import('../types').CommandSuccessPayload> {
+    return this.sendRequest('SEND_REMINDER', elderId, payload);
+  }
+
+  /**
+   * Send message to elder
+   */
+  async sendMessageToElder(
+    elderId: string,
+    payload: import('../types').SendMessagePayload
+  ): Promise<import('../types').CommandSuccessPayload> {
+    return this.sendRequest('SEND_MESSAGE', elderId, payload);
+  }
+
+  /**
+   * Update emergency contact on elder's device
+   */
+  async updateEmergencyContact(
+    elderId: string,
+    payload: import('../types').UpdateEmergencyContactPayload
+  ): Promise<import('../types').CommandSuccessPayload> {
+    return this.sendRequest('UPDATE_EMERGENCY_CONTACT', elderId, payload);
+  }
+
+  /**
+   * Delete emergency contact from elder's device
+   */
+  async deleteEmergencyContact(
+    elderId: string,
+    contactId: string
+  ): Promise<import('../types').CommandSuccessPayload> {
+    return this.sendRequest('DELETE_EMERGENCY_CONTACT', elderId, { contactId });
+  }
 }
 
 export const wsService = new WebSocketService();
