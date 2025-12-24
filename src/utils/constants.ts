@@ -5,8 +5,8 @@
 // Find your IP: Open Terminal and run: ifconfig | grep "inet " | grep -v 127.0.0.1
 
 // For testing on physical phone (same WiFi as Mac):
-export const API_BASE_URL = 'ur ip here'; // REPLACE WITH YOUR MAC'S IP
-export const WS_BASE_URL = 'ws://ur ip here'; // REPLACE WITH YOUR MAC'S IP
+export const API_BASE_URL = 'http://172.20.10.5:3000'; // REPLACE WITH YOUR MAC'S IP
+export const WS_BASE_URL = 'ws://172.20.10.5:3000'; // REPLACE WITH YOUR MAC'S IP
 
 // For testing on simulator (same machine):
 // export const API_BASE_URL = 'http://localhost:3000';
